@@ -511,7 +511,7 @@ export default function TrendingAIPage() {
         {currentUser && <p className="text-xs text-gray-500 mt-1">Logged in as: {currentUser.email || currentUser.uid} {isUserSubscribed ? "(Subscribed)" : "(Not Subscribed)"}</p>}
       </header>
 
-      <SearchBar repoData={repo} setReposData={setReposData} />
+      <SearchBar repo={repo} setReposData={setReposData} />
 
       <div className="flex flex-wrap justify-center gap-3 md:gap-4 my-6 md:my-8 bg-gray-900 p-3 rounded-lg shadow-md">
         {["github", "huggingface", "arxiv"].map((category) => (

@@ -6,14 +6,24 @@ export default function SearchBar({ repoData, setReposData, setRepos, repo }) {
   const [query, setQuery] = useState("");
 
   const handleSearch = () => {
+    // Check if repo exists and is an array
+    if (!repo || !Array.isArray(repo)) {
+      console.warn("SearchBar: repo prop is not provided or not an array");
+      return;
+    }
+
     if (query.trim() === "") {
       // Reset to full list if query empty
       setReposData ? setReposData(repo) : setRepos(repo);
       return;
     }
-    const filtered = repo.filter((item) =>
-      item.name.toLowerCase().includes(query.toLowerCase())
-    );
+
+    const filtered = repo.filter((item) => {
+      // Handle different data structures for different categories
+      const searchText = item.name || item.id || item.title || "";
+      return searchText.toLowerCase().includes(query.toLowerCase());
+    });
+    
     if (setReposData) setReposData(filtered);
     else setRepos(filtered);
   };

@@ -28,7 +28,7 @@ export async function sendWeeklyAiSnapshotEmail(allData) {
 
   const appDisplayName = "BotScout AI"; // Enhanced App Name
   const logoUrl = "public/mainlogo.svg"; // Replace with actual public image URL (maybe a vibrant one)
-  const redirectUrl = "http://localhost:3000"; // Consider your production URL
+  const redirectUrl = "https://botscout-ai.vercel.app/"; // Consider your production URL
 
   // --- Enhanced renderCard Function ---
   const renderCard = (
