@@ -248,8 +248,10 @@ export async function sendWeeklyAiSnapshotEmail(allData) {
     const subscribersCollection = collection(firestore, "subscribers");
     const subscriberDocs = await getDocs(subscribersCollection);
     const subscribers = subscriberDocs.docs
-      .map((doc) => doc.data().email)
+.map((doc) => doc.id)
       .filter((email) => !!email); // Ensure email is not null or empty
+          console.log("Subscriber documents:", subscribers);
+
 
     if (subscribers.length === 0) {
       console.log(
