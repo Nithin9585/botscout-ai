@@ -508,7 +508,7 @@ export default function TrendingAIPage() {
         <p className="text-gray-400 text-sm md:text-base lg:text-lg">
           Discover the latest trending AI models, papers, and projects from across the web.
         </p>
-        {currentUser && <p className="text-xs text-gray-500 mt-1">Logged in as: {currentUser.email || currentUser.uid} {isUserSubscribed ? "(Subscribed)" : "(Not Subscribed)"}</p>}
+        {currentUser && <p className="text-xs text-gray-500 mt-1">Logged in as: {currentUser.email } {isUserSubscribed ? "(Subscribed)" : "(Not Subscribed)"}</p>}
       </header>
 
       <SearchBar repo={repo} setReposData={setReposData} />

@@ -49,7 +49,7 @@ export async function sendWeeklyAiSnapshotEmail(allData) {
         titleColor = "#A78BFA";
         break;
       case "huggingface":
-        icon = "💡"; // Or 🤗
+        icon = "🤗"; // Or 
         borderColor = "#10B981"; // Emerald Green
         titleColor = "#6EE7B7";
         break;

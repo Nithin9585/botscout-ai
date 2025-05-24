@@ -23,8 +23,39 @@ function Subscribers() {
         return;
       }
 
+      // Check if UID exists from auth
+      if (!currentUser.uid) {
+        console.warn("User does not have a UID. Cannot check subscription status.");
+        setIsSubscribed(false);
+        setLoading(false);
+        return;
+      }
+
       try {
-        const docRef = doc(firestore, "subscribers", currentUser.uid);
+        // Fetch user document from 'users' collection using UID
+        const userDocRef = doc(firestore, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+          console.warn("User document not found in 'users' collection.");
+          setIsSubscribed(false);
+          setLoading(false);
+          return;
+        }
+
+        const userData = userDocSnap.data();
+        const userEmail = userData.email;
+
+        if (!userEmail) {
+          console.warn("User document does not contain an email.");
+          setIsSubscribed(false);
+          setLoading(false);
+          return;
+        }
+
+        console.log("Checking subscription for email: ", userEmail);
+        // Use userEmail as the document ID for subscribers
+        const docRef = doc(firestore, "subscribers", userEmail);
         const docSnap = await getDoc(docRef);
         setIsSubscribed(docSnap.exists());
       } catch (error) {
@@ -43,20 +74,67 @@ function Subscribers() {
       return;
     }
 
-    if (isSubscribed) {
-      alert("You are already subscribed.");
+    // Ensure user has a UID from auth
+    if (!user.uid) {
+      alert("Your account does not have a user ID. Cannot subscribe.");
       return;
     }
 
     setActionLoading(true);
     try {
-      const docRef = doc(firestore, "subscribers", user.uid);
-      await setDoc(docRef, {
-        userId: user.uid,
-        timestamp: new Date()
-      });
+      // Fetch user document from 'users' collection
+      const userDocRef = doc(firestore, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        alert("User data not found. Cannot subscribe.");
+        setActionLoading(false);
+        return;
+      }
+
+      const userData = userDocSnap.data();
+      const userEmail = userData.email;
+
+      if (!userEmail) {
+        alert("User has no email address. Cannot subscribe.");
+        setActionLoading(false);
+        return;
+      }
+
+      // If already subscribed, prevent re-subscription (though the button would be disabled)
+      if (isSubscribed) {
+        alert("You are already subscribed.");
+        setActionLoading(false);
+        return;
+      }
+
+      // 1. Store an empty document in 'subscribers' collection, using email as ID
+      const docRef = doc(firestore, "subscribers", userEmail);
+      await setDoc(docRef, {}); // Store an empty document
+
       setIsSubscribed(true);
-      alert("Successfully subscribed!");
+
+      // 2. Send POST request to /api/send-weekly-email
+      try {
+        const response = await fetch("/api/send-weekly-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("API response:", result);
+        alert("Successfully subscribed and initiated email send!");
+      } catch (apiError) {
+        console.error("Error sending weekly email API request:", apiError);
+        alert("Successfully subscribed, but failed to send welcome email.");
+      }
+
     } catch (error) {
       console.error("Error subscribing:", error);
       alert("Failed to subscribe. Please try again.");
@@ -68,7 +146,7 @@ function Subscribers() {
   const iconButtonProps = {
     variant: "ghost",
     size: "icon",
-    className: "text-slate-300 hover:bg-[#372C44] hover:text-white w-10 h-10"
+    className: "text-slate-300 hover:bg-[#372C44] hover:text-white w-10 h-10",
   };
 
   const Tooltip = ({ text, children }) => (
@@ -76,8 +154,8 @@ function Subscribers() {
       {children}
       <span
         className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-20
-                   whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white
-                   opacity-0 transition-opacity group-hover:opacity-100"
+                           whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white
+                           opacity-0 transition-opacity group-hover:opacity-100"
       >
         {text}
       </span>
