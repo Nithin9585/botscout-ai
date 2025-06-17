@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchAllTrendingDataAPIs } from "@/lib/apiFetcher";
+
 /**
  * Calculates the start date for the current week (Monday at 00:00:00).
  * @returns {Date} - A Date object representing the start of Monday.
@@ -20,20 +20,20 @@ function getThisWeekStartDate() {
 
 export async function GET() {
   const monday = getThisWeekStartDate();
-  const likeWeight = 100; // Weight to give 'likes' in our score
-  const fetchLimit = 200; // How many recent models to fetch initially
-  const returnLimit = 20; // How many top models to return
+  const likeWeight = 150; // Slightly increased weight for community approval
+  const fetchLimit = 250; // Fetch a bit more to get a wider sample
+  const returnLimit = 25; // Return a few more top models
+  const now = new Date();
 
-  // Fetch models sorted by lastModified, get full details, limit to 200
-  // We can also add a filter e.g. '&filter=text-generation' if needed
+  // Fetch models sorted by lastModified, get full details
   const HF_API_URL = `https://huggingface.co/api/models?sort=lastModified&direction=-1&limit=${fetchLimit}&full=true`;
 
-  console.log(`Workspaceing from Hugging Face: ${HF_API_URL}`);
+  console.log(`Fetching from Hugging Face: ${HF_API_URL}`);
 
   try {
     const response = await fetch(HF_API_URL, {
-        method: 'GET',
-        next: { revalidate: 3600 } // Cache for 1 hour
+      method: 'GET',
+      next: { revalidate: 3600 } // Cache for 1 hour
     });
 
     if (!response.ok) {
@@ -46,32 +46,49 @@ export async function GET() {
 
     // 1. Filter models modified within the current week
     const thisWeekModels = models.filter(model => {
-        const lastModifiedDate = new Date(model.lastModified);
-        return lastModifiedDate >= monday;
+      const lastModifiedDate = new Date(model.lastModified);
+      return lastModifiedDate >= monday;
     });
 
     console.log(`Found ${thisWeekModels.length} models updated this week.`);
 
-    // 2. Calculate the "Trending Score"
+    // 2. Calculate the new "Momentum Score"
     const scoredModels = thisWeekModels.map(model => {
-        const downloads = model.downloads || 0;
-        const likes = model.likes || 0;
-        const trendingScore = downloads + (likes * likeWeight);
+      const downloads = model.downloads || 0;
+      const likes = model.likes || 0;
+      const lastModifiedDate = new Date(model.lastModified);
 
-        return {
-            id: model.modelId, // Use modelId as the identifier
-            author: model.author,
-            downloads: downloads,
-            likes: likes,
-            lastModified: model.lastModified,
-            tags: model.tags || [],
-            pipeline_tag: model.pipeline_tag,
-            trending_score: trendingScore,
-        };
+      const daysSinceUpdate = (now.getTime() - lastModifiedDate.getTime()) / (1000 * 3600 * 24);
+      
+      // Calculate download velocity with a smoothing factor
+      const downloadVelocity = downloads / (daysSinceUpdate + 2);
+      
+      const momentumScore = downloadVelocity + (likes * likeWeight);
+
+      // Add a freshness boost for very recent models
+      let freshnessMultiplier = 1.0;
+      if (daysSinceUpdate <= 1) {
+        freshnessMultiplier = 1.5;
+      } else if (daysSinceUpdate <= 3) {
+        freshnessMultiplier = 1.2;
+      }
+
+      const finalScore = momentumScore * freshnessMultiplier;
+
+      return {
+        id: model.modelId,
+        author: model.author,
+        downloads: downloads,
+        likes: likes,
+        lastModified: model.lastModified,
+        tags: model.tags || [],
+        pipeline_tag: model.pipeline_tag,
+        momentum_score: finalScore, // Use the new score for sorting
+      };
     });
 
-    // 3. Sort by the new "Trending Score"
-    scoredModels.sort((a, b) => b.trending_score - a.trending_score);
+    // 3. Sort by the new "Momentum Score"
+    scoredModels.sort((a, b) => b.momentum_score - a.momentum_score);
 
     // 4. Return the top N models
     return NextResponse.json(scoredModels.slice(0, returnLimit));
