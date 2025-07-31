@@ -32,7 +32,8 @@ export async function POST(request) {
       return setCorsHeaders(response, origin);
     }
 
-    const transporter = nodemailer.createTransporter({
+    // ✅ FIXED: Use createTransport (not createTransporter)
+    const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
       secure: false,
@@ -84,3 +85,4 @@ export async function OPTIONS(request) {
   const response = new NextResponse(null, { status: 204 });
   return setCorsHeaders(response, origin);
 }
+``
