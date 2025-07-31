@@ -5,9 +5,7 @@ import nodemailer from 'nodemailer';
 // In development, this will typically be your frontend's dev server URL (e.g., http://localhost:5173 for Vite, or http://localhost:3000 if your frontend IS the Next.js app).
 // In production, this MUST be your actual deployed frontend domain (e.g., 'https://your-portfolio-domain.com').
 // It's safer to be explicit than using '*' in production for security.
-const FRONTEND_ORIGIN = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:8080' // <--- **REMOVE THE TRAILING SLASH HERE IF YOUR FRONTEND URL DOESN'T HAVE IT**
-  : 'https://portfolio-sigma-ten-81.vercel.app'; // <--- **SET THIS TO YOUR ACTUAL DEPLOYED PORTFOLIO URL**
+const FRONTEND_ORIGIN = ['http://localhost:8080', 'http://localhost:3000', 'https://portfolio-sigma-ten-81.vercel.app', 'https://nithin-dev-vitbhopal.vercel.app']; // <--- **SET THIS TO YOUR ACTUAL DEPLOYED PORTFOLIO URL**
 
 // Function to set CORS headers on the response
 // We explicitly type 'response' here for better TypeScript support, if you're using it.
